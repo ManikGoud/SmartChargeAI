@@ -57,7 +57,7 @@ export function AddVehicleModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-950/80 backdrop-blur-md overflow-y-auto">
-      <div 
+      <div
         className="relative w-full max-w-xl bg-dark-900 border border-brand-cyan/30 rounded-3xl shadow-2xl overflow-hidden my-8 animate-in fade-in zoom-in-95"
         onClick={(e) => e.stopPropagation()}
       >
@@ -73,8 +73,8 @@ export function AddVehicleModal({ isOpen, onClose }) {
               <p className="text-xs text-slate-400">Configure vehicle battery specs for tailored AI recommendations</p>
             </div>
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-2 rounded-xl bg-white/5 text-slate-400 hover:text-white"
           >
             <X className="w-5 h-5" />
@@ -156,11 +156,10 @@ export function AddVehicleModal({ isOpen, onClose }) {
                     type="button"
                     key={c}
                     onClick={() => toggleConnector(c)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-mono font-medium border transition-all ${
-                      checked 
-                        ? 'bg-brand-cyan/20 border-brand-cyan text-brand-cyan shadow-[0_0_12px_rgba(0,240,255,0.2)]' 
+                    className={`px-3 py-1.5 rounded-xl text-xs font-mono font-medium border transition-all ${checked
+                        ? 'bg-brand-cyan/20 border-brand-cyan text-brand-cyan shadow-[0_0_12px_rgba(0,240,255,0.2)]'
                         : 'bg-dark-950 border-white/10 text-slate-400 hover:text-white'
-                    }`}
+                      }`}
                   >
                     {checked ? '✓ ' : '+ '} {c}
                   </button>
