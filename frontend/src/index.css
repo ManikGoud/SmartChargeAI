@@ -7,8 +7,8 @@
     border-color: rgba(255, 255, 255, 0.08);
   }
   body {
-    background-color: #07090e;
-    color: #e2e8f0;
+    background-color: #000000;
+    color: #f1f5f9;
     overflow-x: hidden;
   }
 }
@@ -19,32 +19,30 @@
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0b0f17;
+  background: #030504;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1f2c44;
+  background: #142018;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #00f0ff;
+  background: #00ff66;
 }
 
 /* Glass panel utility */
 .glass-panel {
-  background: rgba(16, 22, 34, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(8, 14, 10, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-panel-glow {
-  background: rgba(16, 22, 34, 0.85);
+  background: rgba(8, 14, 10, 0.88);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 240, 255, 0.25);
-  box-shadow: 0 0 25px rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 255, 102, 0.25);
+  box-shadow: 0 0 25px rgba(0, 255, 102, 0.15);
 }
-
-
 
 /* Leaflet Dark Theme Overrides */
 .leaflet-container {
@@ -52,20 +50,125 @@
 }
 
 .leaflet-popup-content-wrapper {
-  background: #0b0f17 !important;
+  background: #070b08 !important;
   color: #f1f5f9 !important;
-  border: 1px solid rgba(0, 240, 255, 0.25) !important;
+  border: 1px solid rgba(0, 255, 102, 0.3) !important;
   border-radius: 14px !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85) !important;
   padding: 4px !important;
 }
 
 .leaflet-popup-tip {
-  background: #0b0f17 !important;
-  border: 1px solid rgba(0, 240, 255, 0.25) !important;
+  background: #070b08 !important;
+  border: 1px solid rgba(0, 255, 102, 0.3) !important;
 }
 
 .leaflet-popup-content {
   margin: 10px !important;
   line-height: 1.4 !important;
+}
+
+/* Dark automotive filter for 100% Free OpenStreetMap standard tiles */
+.dark-map-tiles {
+  filter: invert(100%) hue-rotate(180deg) brightness(88%) contrast(92%);
+}
+
+
+/* =========================================================================
+   CUSTOMER PORTAL: STRICT BLACK & WHITE MONOCHROME AUTOMOTIVE THEME
+   Scoped strictly under .customer-portal so Owner and Admin remain 100% unaffected.
+   ========================================================================= */
+.customer-portal {
+  background-color: #050507;
+  color: #FFFFFF;
+}
+
+.customer-portal ::-webkit-scrollbar-track {
+  background: #050507;
+}
+
+.customer-portal ::-webkit-scrollbar-thumb {
+  background: #27272A;
+  border-radius: 4px;
+}
+
+.customer-portal ::-webkit-scrollbar-thumb:hover {
+  background: #52525B;
+}
+
+.customer-portal .automotive-card {
+  background: #0B0B0E;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+}
+
+.customer-portal .automotive-card:hover {
+  background: #121216;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.customer-portal .automotive-glass {
+  background: rgba(11, 11, 14, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.customer-portal .glass-panel-glow {
+  background: #0B0B0E;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+}
+
+.customer-portal .automotive-input {
+  background: #050507;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+  transition: all 0.2s ease;
+}
+
+.customer-portal .automotive-input:focus {
+  border-color: #FFFFFF;
+  outline: none;
+}
+
+/* Functional micro status LED - pure white */
+.customer-portal .status-led-white,
+.customer-portal .status-led-green {
+  width: 6px;
+  height: 6px;
+  background-color: #FFFFFF;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+  display: inline-block;
+}
+
+/* Luxury Monochrome Action Buttons */
+.customer-portal .btn-solid-white {
+  background: #FFFFFF;
+  color: #050507;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.customer-portal .btn-solid-white:hover {
+  background: #D4D4D8;
+  transform: translateY(-1px);
+}
+
+.customer-portal .btn-outline-titanium {
+  background: transparent;
+  color: #E4E4E7;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.2s ease;
+}
+
+.customer-portal .btn-outline-titanium:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.04);
 }

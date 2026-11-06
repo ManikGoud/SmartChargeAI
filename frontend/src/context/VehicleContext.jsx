@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { SAMPLE_VEHICLES } from '../data/sampleData';
 import { fetchVehicles, createCustomVehicle } from '../services/api';
 
-const VehicleContext = createContext();
+const VehicleContext = createContext(null);
 
 const LOCAL_STORAGE_KEY_VEHICLE = 'smartcharge_active_vehicle';
 const LOCAL_STORAGE_KEY_GARAGE = 'smartcharge_user_garage';
@@ -100,6 +100,31 @@ export function VehicleProvider({ children }) {
     return newVehicle;
   };
 
+  const editVehicle = (vehicleId, updatedData) => {
+    setVehicles(prev => prev.map(v => {
+      if (v.id === vehicleId) {
+        const merged = { ...v, ...updatedData };
+        if (activeVehicle?.id === vehicleId) {
+          setActiveVehicle(merged);
+        }
+        return merged;
+      }
+      return v;
+    }));
+  };
+
+  const deleteVehicle = (vehicleId) => {
+    setVehicles(prev => {
+      const filtered = prev.filter(v => v.id !== vehicleId);
+      if (activeVehicle?.id === vehicleId && filtered.length > 0) {
+        setActiveVehicle(filtered[0]);
+        setCurrentSoC(filtered[0].defaultSoC || filtered[0].currentSoC || 50);
+        localStorage.setItem(LOCAL_STORAGE_KEY_VEHICLE, filtered[0].id);
+      }
+      return filtered;
+    });
+  };
+
   // Computations
   const cap = activeVehicle.batteryCapacity || activeVehicle.battery_capacity || 70;
   const range = activeVehicle.rangeKm || activeVehicle.range_km || 400;
@@ -117,6 +142,8 @@ export function VehicleProvider({ children }) {
         selectVehicle,
         updateSoC,
         addCustomVehicle,
+        editVehicle,
+        deleteVehicle,
         remainingKwh,
         usableRangeKm,
         energyNeededTo80,

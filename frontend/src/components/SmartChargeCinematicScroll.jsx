@@ -1,24 +1,26 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { 
-  Zap, 
-  Activity, 
-  Navigation, 
-  ShieldCheck, 
-  Cpu, 
-  Layers, 
-  Wind, 
-  BatteryCharging, 
+import {
+  Zap,
+  Activity,
+  Navigation,
+  ShieldCheck,
+  Cpu,
+  Layers,
+  Wind,
+  BatteryCharging,
   ArrowRight,
   Search,
-  Compass
+  Compass,
+  MapPin,
+  CheckCircle2
 } from 'lucide-react';
 import { DemoDataBadge } from './Badge';
 
 gsap.registerPlugin(ScrollTrigger);
 
-// 4 Cinematic Scenes mapped to the 800-frame sequences
+// 4 Cinematic Scenes mapped to the 768-frame HQ sequences (192 genuine frames per scene)
 const SCENES = [
   {
     id: 'take1',
@@ -26,9 +28,9 @@ const SCENES = [
     name: 'Departure & Energy Recovery',
     subtitle: 'Kinetic Regeneration in Urban Corridors',
     folderKey: 'clip1',
-    folderPath: '/assets/frames/clip1',
+    folderPath: '/assets/frames_hq/clip1',
     range: [0.0, 0.25],
-    totalFrames: 200,
+    totalFrames: 192,
     headline: 'Urban Energy Recovery',
     tagline: 'Dual-motor regenerative braking captures up to +32 kW during city deceleration.',
     telemetry: {
@@ -47,9 +49,9 @@ const SCENES = [
     name: 'Corridor High-Speed Cruising',
     subtitle: 'Aerodynamic Drag Compensation at 118 km/h',
     folderKey: 'clip2',
-    folderPath: '/assets/frames/clip2',
+    folderPath: '/assets/frames_hq/clip2',
     range: [0.25, 0.50],
-    totalFrames: 200,
+    totalFrames: 192,
     headline: 'Corridor Aerodynamics',
     tagline: 'Continuous telemetry cross-references frontal area, wind vectors, and road gradient.',
     telemetry: {
@@ -68,9 +70,9 @@ const SCENES = [
     name: 'Hypercharger Plaza Docking',
     subtitle: 'Automated 800V Cell Thermal Pre-Conditioning',
     folderKey: 'clip3',
-    folderPath: '/assets/frames/clip3',
+    folderPath: '/assets/frames_hq/clip3',
     range: [0.50, 0.75],
-    totalFrames: 200,
+    totalFrames: 192,
     headline: '800V Thermal Conditioning',
     tagline: 'Cells pre-conditioned to 32.0°C to accept peak 350 kW DC charging without throttling.',
     telemetry: {
@@ -89,9 +91,9 @@ const SCENES = [
     name: '3D Exploded Powertrain',
     subtitle: 'Inside the 800V Liquid-Cooled Architecture',
     folderKey: 'flow',
-    folderPath: '/assets/frames/flow',
+    folderPath: '/assets/frames_hq/flow',
     range: [0.75, 1.00],
-    totalFrames: 200,
+    totalFrames: 192,
     headline: 'Exploded Powertrain Architecture',
     tagline: 'Inspect the 800V lithium pack, liquid-cooled CCS-2 busbar, and dual SiC inverters.',
     telemetry: {
@@ -154,6 +156,10 @@ export function SmartChargeCinematicScroll({ setCurrentPage, onSearch }) {
       canvas.height = displayH;
     }
 
+    // High quality smoothing enabled to ensure crystal clear upscaling/downscaling
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
     if (clear) {
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -199,16 +205,16 @@ export function SmartChargeCinematicScroll({ setCurrentPage, onSearch }) {
   }, []);
 
   // -------------------------------------------------------------
-  // 2. Progressive Image Preloading Pipeline
+  // 2. Progressive Image Preloading Pipeline (768 Genuine HQ Frames)
   // -------------------------------------------------------------
   useEffect(() => {
     let isCancelled = false;
     let totalLoadedCount = 0;
-    const TOTAL_ALL_FRAMES = 800;
+    const TOTAL_ALL_FRAMES = 768; // 192 genuine frames per scene
 
     const formatUrl = (folderPath, idx) => {
       const padded = String(idx).padStart(3, '0');
-      return `${folderPath}/ezgif-frame-${padded}.jpg`;
+      return `${folderPath}/frame-${padded}.webp`;
     };
 
     const loadSingle = async (folderKey, folderPath, idx) => {
@@ -237,7 +243,7 @@ export function SmartChargeCinematicScroll({ setCurrentPage, onSearch }) {
       imageCaches.current[folderKey].set(idx, img);
       totalLoadedCount++;
 
-      if (totalLoadedCount % 40 === 0 || totalLoadedCount === TOTAL_ALL_FRAMES) {
+      if (totalLoadedCount % 32 === 0 || totalLoadedCount === TOTAL_ALL_FRAMES) {
         setCacheProgress(Math.round((totalLoadedCount / TOTAL_ALL_FRAMES) * 100));
       }
 
@@ -245,7 +251,7 @@ export function SmartChargeCinematicScroll({ setCurrentPage, onSearch }) {
     };
 
     // STAGE A: Load Frame 1 of Scene 1 IMMEDIATELY & paint
-    loadSingle('clip1', '/assets/frames/clip1', 1).then((firstImg) => {
+    loadSingle('clip1', '/assets/frames_hq/clip1', 1).then((firstImg) => {
       if (isCancelled || !firstImg) return;
       setIsCanvasReady(true);
       drawImageToCanvas(firstImg, 1.0, true);
@@ -253,43 +259,43 @@ export function SmartChargeCinematicScroll({ setCurrentPage, onSearch }) {
 
     // STAGE B: Prioritized progressive load across scenes
     const queueLoads = async () => {
-      // 1. Keyframes of Scene 1 (every 5th frame for instant scrub response)
-      for (let i = 5; i <= 200; i += 5) {
+      // 1. Keyframes of Scene 1 (every 4th frame for instant scrub response)
+      for (let i = 4; i <= 192; i += 4) {
         if (isCancelled) return;
-        await loadSingle('clip1', '/assets/frames/clip1', i);
+        await loadSingle('clip1', '/assets/frames_hq/clip1', i);
       }
 
       // 2. Keyframes of Scene 2 (prepare upcoming scene)
-      for (let i = 1; i <= 200; i += 5) {
+      for (let i = 1; i <= 192; i += 4) {
         if (isCancelled) return;
-        await loadSingle('clip2', '/assets/frames/clip2', i);
+        await loadSingle('clip2', '/assets/frames_hq/clip2', i);
       }
 
       // 3. Fill in Scene 1 intermediate frames
-      for (let i = 2; i <= 200; i++) {
+      for (let i = 2; i <= 192; i++) {
         if (isCancelled) return;
-        if (i % 5 !== 0) await loadSingle('clip1', '/assets/frames/clip1', i);
+        if (i % 4 !== 0) await loadSingle('clip1', '/assets/frames_hq/clip1', i);
       }
 
       // 4. Fill in Scene 2 intermediate frames
-      for (let i = 2; i <= 200; i++) {
+      for (let i = 2; i <= 192; i++) {
         if (isCancelled) return;
-        if (i % 5 !== 0) await loadSingle('clip2', '/assets/frames/clip2', i);
+        if (i % 4 !== 0) await loadSingle('clip2', '/assets/frames_hq/clip2', i);
       }
 
       // 5. Keyframes of Scene 3 and Scene 4
-      for (let i = 1; i <= 200; i += 5) {
+      for (let i = 1; i <= 192; i += 4) {
         if (isCancelled) return;
-        await loadSingle('clip3', '/assets/frames/clip3', i);
-        await loadSingle('flow', '/assets/frames/flow', i);
+        await loadSingle('clip3', '/assets/frames_hq/clip3', i);
+        await loadSingle('flow', '/assets/frames_hq/flow', i);
       }
 
       // 6. Complete all remaining frames for Scene 3 & Scene 4
-      for (let i = 2; i <= 200; i++) {
+      for (let i = 2; i <= 192; i++) {
         if (isCancelled) return;
-        if (i % 5 !== 0) {
-          await loadSingle('clip3', '/assets/frames/clip3', i);
-          await loadSingle('flow', '/assets/frames/flow', i);
+        if (i % 4 !== 0) {
+          await loadSingle('clip3', '/assets/frames_hq/clip3', i);
+          await loadSingle('flow', '/assets/frames_hq/flow', i);
         }
       }
     };
@@ -326,15 +332,15 @@ export function SmartChargeCinematicScroll({ setCurrentPage, onSearch }) {
       const [startP, endP] = scene.range;
       const localProgress = Math.min(1, Math.max(0, (progress - startP) / (endP - startP)));
 
-      // Exact frame (1 to 200)
-      const targetFrame = Math.min(200, Math.max(1, Math.floor(localProgress * 199) + 1));
+      // Exact frame (1 to 192)
+      const targetFrame = Math.min(scene.totalFrames, Math.max(1, Math.floor(localProgress * (scene.totalFrames - 1)) + 1));
 
       // Direct DOM updates for ultra-low latency & zero React render churn
       if (hudSceneRef.current) {
         hudSceneRef.current.textContent = `Scene ${scene.sceneNum} • ${scene.name}`;
       }
       if (hudFrameRef.current) {
-        hudFrameRef.current.textContent = `Frame ${String(targetFrame).padStart(3, '0')} / 200`;
+        hudFrameRef.current.textContent = `Frame ${String(targetFrame).padStart(3, '0')} / ${scene.totalFrames}`;
       }
       if (hudSpeedRef.current) {
         hudSpeedRef.current.textContent = scene.telemetry.speed;
@@ -416,23 +422,23 @@ export function SmartChargeCinematicScroll({ setCurrentPage, onSearch }) {
   };
 
   return (
-    <section 
-      ref={containerRef} 
+    <section
+      ref={containerRef}
       className="relative w-full h-screen bg-black overflow-hidden select-none text-white font-sans"
     >
       {/* 1. Pure Black Canvas Viewport (Vehicles rendered in native 16:9 aspect ratio) */}
       <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-black z-0">
         <canvas
           ref={canvasRef}
-          className="w-full h-full object-cover transition-opacity duration-300"
+          className="w-full h-full block transition-opacity duration-300"
           style={{ opacity: isCanvasReady ? 1 : 0 }}
         />
 
         {/* Fallback image while frame 1 decodes */}
         {!isCanvasReady && (
-          <img 
-            src="/assets/batman_be6.png" 
-            alt="SmartChargeAI EV" 
+          <img
+            src="/assets/batman_be6.png"
+            alt="SmartChargeAI EV"
             className="absolute inset-0 w-full h-full object-cover filter blur-[2px] opacity-30"
           />
         )}
@@ -442,11 +448,11 @@ export function SmartChargeCinematicScroll({ setCurrentPage, onSearch }) {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_50%,_rgba(0,0,0,0.7)_100%)] pointer-events-none z-1"></div>
       </div>
 
-      {/* 2. Top Minimal Luxury Navigation & Telemetry Pill */}
-      <div className="absolute top-0 left-0 right-0 z-20 pt-6 px-4 sm:px-8 max-w-7xl mx-auto flex items-center justify-between">
-        
+      {/* 2. Top Minimal Navigation Bar */}
+      <div className="absolute top-0 left-0 right-0 z-20 pt-6 px-4 sm:px-8 max-w-7xl mx-auto flex items-center justify-between pointer-events-none">
+
         {/* Brand identity with Electric Green accent */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 pointer-events-auto">
           <div className="w-9 h-9 rounded-xl bg-black/80 border border-[#00FF66]/30 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,102,0.2)]">
             <Zap className="w-5 h-5 text-[#00FF66]" />
           </div>
@@ -455,139 +461,121 @@ export function SmartChargeCinematicScroll({ setCurrentPage, onSearch }) {
               <span>SMARTCHARGE</span>
               <span className="text-[#00FF66]">AI</span>
             </div>
-            <div className="text-[10px] font-mono text-slate-400 tracking-wider">
-              800V CINEMATIC TELEMETRY
+            <div className="text-[10px] font-mono text-[#00FF66]/80 tracking-wider">
+              EV CHARGING NETWORK
             </div>
           </div>
         </div>
 
-        {/* Scene Selection Indicators (GreenIQ minimal aesthetic) */}
-        <div className="hidden md:flex items-center space-x-1.5 p-1 rounded-full bg-black/70 backdrop-blur-md border border-white/10 text-xs font-mono">
-          {SCENES.map((sc, i) => (
-            <div 
-              key={sc.id}
-              className={`px-3 py-1 rounded-full transition-all duration-300 flex items-center space-x-1.5 ${
-                activeSceneIdx === i 
-                  ? 'bg-[#00FF66]/15 text-[#00FF66] border border-[#00FF66]/40 font-bold shadow-[0_0_12px_rgba(0,255,102,0.25)]' 
-                  : 'text-slate-400'
-              }`}
-            >
-              <span>{sc.sceneNum}</span>
-              <span className="hidden lg:inline">{sc.name.split(' ')[0]}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Demo / Status badge */}
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-black/80 border border-[#00FF66]/20 text-[11px] font-mono text-slate-300 backdrop-blur-md">
-            <span className="w-2 h-2 rounded-full bg-[#00FF66] animate-pulse"></span>
-            <span ref={hudFrameRef}>Frame 001 / 200</span>
-          </div>
+        {/* Demo status */}
+        <div className="flex items-center space-x-3 pointer-events-auto">
           <DemoDataBadge />
         </div>
       </div>
 
-      {/* 3. Floating Cinematic Overlays (Edge-anchored, leaving central car view completely unobstructed) */}
-      <div className="absolute inset-0 z-10 pointer-events-none p-6 sm:p-10 flex flex-col justify-between pt-24 sm:pt-28">
-        
-        {/* Top-Left Scene Narrative Header */}
-        <div className="max-w-md pointer-events-auto">
-          <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded-md bg-black/80 border border-white/10 text-[10px] font-mono uppercase tracking-wider text-[#00FF66] mb-2 backdrop-blur-sm">
-            <Activity className="w-3 h-3 text-[#00FF66]" />
-            <span ref={hudSceneRef}>Scene 01 • Departure & Energy Recovery</span>
-          </div>
-          <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight drop-shadow-lg">
-            {activeScene.headline}
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-300 mt-1.5 leading-relaxed drop-shadow">
-            {activeScene.tagline}
-          </p>
+        {/* 3. EV Charging Promotional Advertisement Card (Upper-middle, anchored left, vehicle 100% visible) */}
+        <div className="absolute inset-0 z-10 pointer-events-none px-4 sm:px-8 lg:px-12 flex flex-col justify-start pt-24 sm:pt-28 md:pt-32">
 
-          {/* Quick Search Action on Scene 1 */}
-          {activeSceneIdx === 0 && (
-            <form 
-              onSubmit={handleSearchSubmit}
-              className="mt-4 flex items-center max-w-sm rounded-xl bg-black/80 border border-white/15 p-1.5 backdrop-blur-md focus-within:border-[#00FF66] transition-all"
-            >
-              <Search className="w-4 h-4 text-[#00FF66] ml-2 shrink-0" />
-              <input
-                ref={queryInputRef}
-                type="text"
-                placeholder="Find 350 kW charging hubs..."
-                className="w-full bg-transparent px-3 py-1 text-xs text-white placeholder-slate-500 focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="px-3 py-1.5 rounded-lg bg-[#00FF66] text-black font-mono font-bold text-xs hover:bg-[#00FF66]/90 transition-all shrink-0"
-              >
-                Search
-              </button>
-            </form>
-          )}
-        </div>
+            <div className="w-full max-w-[420px] pointer-events-auto bg-black/70 backdrop-blur-md border border-[#00FF66]/20 rounded-2xl p-5 sm:p-6 shadow-xl shadow-black/60 relative overflow-hidden">
 
-        {/* Bottom Telemetry Bar: Electric Green Accents */}
-        <div className="pointer-events-auto w-full max-w-7xl mx-auto flex flex-col sm:flex-row items-end sm:items-center justify-between gap-4">
-          
-          {/* Active Navigation Waypoint */}
-          <div className="p-3.5 rounded-2xl bg-black/80 backdrop-blur-md border border-white/10 max-w-sm text-xs font-mono">
-            <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5 flex items-center space-x-1">
-              <Navigation className="w-3 h-3 text-[#00FF66]" />
-              <span>Target Waypoint</span>
-            </div>
-            <div ref={hudGoalRef} className="text-white font-bold truncate">
-              {activeScene.telemetry.goal}
-            </div>
-            <div className="text-[10px] text-[#00FF66] mt-1 font-semibold flex items-center space-x-1">
-              <ShieldCheck className="w-3 h-3" />
-              <span>{activeScene.telemetry.status}</span>
-            </div>
-          </div>
+              {/* Small label */}
+                <div className="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-[#00FF66]/10 border border-[#00FF66]/20 text-[10px] font-mono uppercase tracking-widest text-[#00FF66] mb-3">
+                  <Zap className="w-3 h-3 text-[#00FF66]" />
+                  <span>SMARTCHARGE AI | EV CHARGING</span>
+                </div>
 
-          {/* Precision Gauges */}
-          <div className="grid grid-cols-3 gap-2.5 sm:gap-3 font-mono">
-            <div className="p-3 rounded-2xl bg-black/80 backdrop-blur-md border border-white/10 text-center min-w-[90px] sm:min-w-[110px]">
-              <span className="text-[9px] uppercase tracking-wider text-slate-400 block">Velocity</span>
-              <span ref={hudSpeedRef} className="text-base sm:text-xl font-black text-white">
-                {activeScene.telemetry.speed}
-              </span>
-            </div>
+                {/* Main Heading */}
+                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
+                    Need a Charge? <span className="text-[#00FF66]">Find It Here.</span>
+                  </h1>
 
-            <div className="p-3 rounded-2xl bg-black/80 backdrop-blur-md border border-white/10 text-center min-w-[90px] sm:min-w-[110px]">
-              <span className="text-[9px] uppercase tracking-wider text-slate-400 block">Power Balance</span>
-              <span ref={hudPowerRef} className="text-base sm:text-xl font-black text-[#00FF66]">
-                {activeScene.telemetry.power}
-              </span>
-            </div>
+                  {/* Description */}
+                    <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+                      Find EV charging stations near you. Compare prices, check availability and get back on the road.
+                    </p>
 
-            <div className="p-3 rounded-2xl bg-black/80 backdrop-blur-md border border-white/10 text-center min-w-[90px] sm:min-w-[110px]">
-              <span className="text-[9px] uppercase tracking-wider text-slate-400 block">BMS Temp</span>
-              <span ref={hudTempRef} className="text-base sm:text-xl font-black text-white">
-                {activeScene.telemetry.temp}
-              </span>
-            </div>
-          </div>
+                    {/* Connected Search Bar */}
+                    <form
+                      onSubmit={handleSearchSubmit}
+                      className="mt-4 flex items-center rounded-xl bg-black/60 border border-white/15 p-1.5 focus-within:border-[#00FF66]/60 transition-colors"
+                    >
+                      <Search className="w-4 h-4 text-[#00FF66] ml-2 shrink-0" />
+                      <input
+                        ref={queryInputRef}
+                        type="text"
+                        placeholder="Search charging stations..."
+                        className="w-full bg-transparent px-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none"
+                      />
+                      <button
+                        type="submit"
+                        className="px-3.5 py-1.5 rounded-lg bg-[#00FF66] text-black font-mono font-bold text-xs hover:bg-[#00FF66]/90 transition-all shrink-0 cursor-pointer"
+                      >
+                        Find Chargers
+                      </button>
+                    </form>
 
-        </div>
+                    {/* Supporting highlights */}
+                      <div className="mt-3.5 pt-3.5 border-t border-white/10 flex flex-wrap gap-2 text-[11px] font-mono">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onSearch) onSearch('');
+                            if (setCurrentPage) setCurrentPage('discovery');
+                          }}
+                          className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-slate-200 hover:border-[#00FF66]/40 hover:text-[#00FF66] transition-colors cursor-pointer"
+                        >
+                          <MapPin className="w-3 h-3 text-[#00FF66]" />
+                          <span>Nearby Chargers</span>
+                        </button>
 
-      </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onSearch) onSearch('Fast');
+                            if (setCurrentPage) setCurrentPage('discovery');
+                          }}
+                          className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-slate-200 hover:border-[#00FF66]/40 hover:text-[#00FF66] transition-colors cursor-pointer"
+                        >
+                          <Zap className="w-3 h-3 text-[#00FF66]" />
+                          <span>Fast Charging</span>
+                        </button>
 
-      {/* 4. Bottom Continuous Scrub Timeline Bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10 z-30">
-        <div 
-          ref={progressLineRef}
-          className="h-full bg-gradient-to-r from-[#00FF66] via-emerald-400 to-[#00FF66] shadow-[0_0_10px_#00FF66] transition-all duration-75"
-          style={{ width: '0%' }}
-        />
-      </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onSearch) onSearch('');
+                            if (setCurrentPage) setCurrentPage('discovery');
+                          }}
+                          className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-slate-200 hover:border-[#00FF66]/40 hover:text-[#00FF66] transition-colors cursor-pointer"
+                        >
+                          <CheckCircle2 className="w-3 h-3 text-[#00FF66]" />
+                          <span>Compare Prices</span>
+                        </button>
+                      </div>
 
-      {/* Subtle Frame Preload Status Indicator */}
-      {cacheProgress < 100 && (
-        <div className="absolute bottom-3 right-6 z-30 text-[9px] font-mono text-slate-500 bg-black/60 px-2 py-0.5 rounded border border-white/5">
-          Caching 800 frames: {cacheProgress}%
-        </div>
-      )}
-    </section>
-  );
+                      {/* Tagline */}
+                        <p className="mt-3 text-[11px] font-mono text-[#00FF66]/90 tracking-wide font-medium">
+                          Find your charger. Power your journey.
+                        </p>
+                    </div>
+
+                  </div>
+
+                  {/* 4. Bottom Continuous Scrub Timeline Bar */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10 z-30">
+                    <div
+                      ref={progressLineRef}
+                      className="h-full bg-gradient-to-r from-[#00FF66] via-emerald-400 to-[#00FF66] shadow-[0_0_10px_#00FF66] transition-all duration-75"
+                      style={{ width: '0%' }}
+                    />
+                  </div>
+
+                  {/* Subtle Frame Preload Status Indicator */}
+                  {cacheProgress < 100 && (
+                    <div className="absolute bottom-3 right-6 z-30 text-[9px] font-mono text-slate-500 bg-black/60 px-2 py-0.5 rounded border border-white/5">
+                      Caching 768 frames: {cacheProgress}%
+                    </div>
+                  )}
+                </section>
+                );
 }

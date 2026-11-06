@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 /**
  * High-performance, hardware-accelerated Scroll-Driven Canvas Animation.
@@ -9,6 +9,19 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
  * 3. Preloads frames progressively with nearest-frame fallback so canvas never flickers.
  * 4. Responsive canvas with aspect-ratio "cover" logic and devicePixelRatio support.
  * 5. Respects prefers-reduced-motion.
+ */
+/**
+ * @param {{
+ *   folderPath: string;
+ *   totalFrames?: number;
+ *   framePrefix?: string;
+ *   frameExtension?: string;
+ *   containerRef: { current: HTMLElement | null };
+ *   posterSrc?: string;
+ *   overlayClassName?: string;
+ *   onProgressChange?: ((progress: number, frame: number) => void) | null;
+ *   active?: boolean;
+ * }} props
  */
 export function ScrollCanvasBackground({
   folderPath,
@@ -21,86 +34,18 @@ export function ScrollCanvasBackground({
   onProgressChange = null,
   active = true
 }) {
-  const canvasRef = useRef(null);
-  const imagesRef = useRef([]);
+  const canvasRef = useRef(/** @type {HTMLCanvasElement | null} */ (null));
+  const imagesRef = useRef(/** @type {HTMLImageElement[]} */ ([]));
   const loadedMapRef = useRef(new Uint8Array(totalFrames + 1));
   const currentFrameRef = useRef(1);
   const targetFrameRef = useRef(1);
-  const rafIdRef = useRef(null);
+  const rafIdRef = useRef(/** @type {number | null} */ (null));
   const [loadPercentage, setLoadPercentage] = useState(0);
   const [isReady, setIsReady] = useState(false);
 
-  // Progressive image preloader
-  useEffect(() => {
-    let isCancelled = false;
-    const images = new Array(totalFrames + 1);
-    const loadedMap = new Uint8Array(totalFrames + 1);
-    let loadedCount = 0;
-
-    const getFrameUrl = (idx) => {
-      const padded = String(idx).padStart(3, '0');
-      return `${folderPath}/${framePrefix}${padded}${frameExtension}`;
-    };
-
-    imagesRef.current = images;
-    loadedMapRef.current = loadedMap;
-
-    // Load frame helper
-    const loadSingleFrame = (idx) => {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.src = getFrameUrl(idx);
-        img.onload = () => {
-          if (isCancelled) return resolve();
-          images[idx] = img;
-          loadedMap[idx] = 1;
-          loadedCount++;
-          if (loadedCount % 10 === 0 || loadedCount === totalFrames) {
-            setLoadPercentage(Math.round((loadedCount / totalFrames) * 100));
-          }
-            if (idx === 1) {
-              setIsReady(true);
-              renderFrame(1);
-            }
-            resolve();
-          };
-          img.onerror = () => {
-            if (isCancelled) return resolve();
-            // Fallback to poster if individual frame fails
-            resolve();
-          };
-        });
-    };
-
-    // Stage 1: Load Frame 1 immediately for instant paint
-    loadSingleFrame(1).then(() => {
-      if (isCancelled) return;
-      renderFrame(1);
-      // Stage 2: Load keyframes first (every 5th frame)
-      const keyframePromises = [];
-      for (let i = 5; i <= totalFrames; i += 5) {
-        keyframePromises.push(loadSingleFrame(i));
-      }
-      Promise.all(keyframePromises).then(() => {
-        if (isCancelled) return;
-        // Stage 3: Fill in remaining intermediate frames
-        for (let i = 2; i <= totalFrames; i++) {
-          if (i % 5 !== 0) {
-            loadSingleFrame(i);
-          }
-        }
-      });
-    });
-
-    return () => {
-      isCancelled = true;
-      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-    };
-  }, [folderPath, totalFrames, framePrefix, frameExtension]);
-
   // Render frame to canvas with aspect-ratio "cover" positioning
-  const renderFrame = useCallback((frameIdx) => {
-    const canvas = canvasRef.current;
+  const renderFrame = useCallback((/** @type {number} */ frameIdx) => {
+    const canvas = /** @type {HTMLCanvasElement | null} */ (canvasRef.current);
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -117,7 +62,7 @@ export function ScrollCanvasBackground({
     }
 
     // Find best loaded frame (nearest neighbor if requested frame is buffering)
-    let bestImg = imagesRef.current[frameIdx];
+    let bestImg = /** @type {HTMLImageElement | undefined} */ (imagesRef.current[frameIdx]);
     if (!bestImg || !bestImg.complete) {
       // Find closest loaded frame
       const loadedMap = loadedMapRef.current;
@@ -156,6 +101,74 @@ export function ScrollCanvasBackground({
       );
     }
   }, [totalFrames]);
+
+  // Progressive image preloader
+  useEffect(() => {
+    let isCancelled = false;
+    const images = /** @type {HTMLImageElement[]} */ ([]);
+    const loadedMap = new Uint8Array(totalFrames + 1);
+    let loadedCount = 0;
+
+    const getFrameUrl = (/** @type {number} */ idx) => {
+      const padded = String(idx).padStart(3, '0');
+      return `${folderPath}/${framePrefix}${padded}${frameExtension}`;
+    };
+
+    imagesRef.current = images;
+    loadedMapRef.current = loadedMap;
+
+    // Load frame helper
+    const loadSingleFrame = (/** @type {number} */ idx) => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = getFrameUrl(idx);
+        img.onload = () => {
+          if (isCancelled) return resolve(null);
+          images[idx] = img;
+          loadedMap[idx] = 1;
+          loadedCount++;
+          if (loadedCount % 10 === 0 || loadedCount === totalFrames) {
+            setLoadPercentage(Math.round((loadedCount / totalFrames) * 100));
+          }
+          if (idx === 1) {
+            setIsReady(true);
+            renderFrame(1);
+          }
+          resolve(null);
+        };
+        img.onerror = () => {
+          if (isCancelled) return resolve(null);
+          // Fallback to poster if individual frame fails
+          resolve(null);
+        };
+      });
+    };
+
+    // Stage 1: Load Frame 1 immediately for instant paint
+    loadSingleFrame(1).then(() => {
+      if (isCancelled) return;
+      renderFrame(1);
+      // Stage 2: Load keyframes first (every 5th frame)
+      const keyframePromises = [];
+      for (let i = 5; i <= totalFrames; i += 5) {
+        keyframePromises.push(loadSingleFrame(i));
+      }
+      Promise.all(keyframePromises).then(() => {
+        if (isCancelled) return;
+        // Stage 3: Fill in remaining intermediate frames
+        for (let i = 2; i <= totalFrames; i++) {
+          if (i % 5 !== 0) {
+            loadSingleFrame(i);
+          }
+        }
+      });
+    });
+
+    return () => {
+      isCancelled = true;
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    };
+  }, [folderPath, totalFrames, framePrefix, frameExtension, renderFrame]);
 
   // Render immediately when ready
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Sliders, 
   Play, 
@@ -7,11 +7,6 @@ import {
   Zap, 
   Layers, 
   Cpu, 
-  ShieldCheck, 
-  Maximize2, 
-  Info, 
-  ChevronRight,
-  Eye,
   Video
 } from 'lucide-react';
 import { DemoDataBadge } from './Badge';
@@ -84,8 +79,8 @@ const HOTSPOTS = [
 ];
 
 export function ExplodedViewSection() {
-  const canvasRef = useRef(null);
-  const imagesRef = useRef([]);
+  const canvasRef = useRef(/** @type {HTMLCanvasElement | null} */ (null));
+  const imagesRef = useRef(/** @type {HTMLImageElement[]} */ ([]));
   const [currentFrame, setCurrentFrame] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1); // 1x, 2x
@@ -93,23 +88,23 @@ export function ExplodedViewSection() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeHotspot, setActiveHotspot] = useState(HOTSPOTS[0]);
   const [mode, setMode] = useState('canvas'); // 'canvas' | 'video'
-  const animFrameIdRef = useRef(null);
+  const animFrameIdRef = useRef(/** @type {number | null} */ (null));
   const isReverseRef = useRef(false);
 
   // Progressive frame loading
   useEffect(() => {
     let mounted = true;
-    const images = [];
+    const images = /** @type {HTMLImageElement[]} */ ([]);
     let loadedCount = 0;
 
     // Helper to format frame path: /assets/frames/flow/ezgif-frame-001.jpg
-    const getFrameUrl = (idx) => {
+    const getFrameUrl = (/** @type {number} */ idx) => {
       const padded = String(idx).padStart(3, '0');
       return `/assets/frames/flow/ezgif-frame-${padded}.jpg`;
     };
 
     // Preload keyframes first (every 5th frame for fast responsiveness), then fill in
-    const loadBatch = async () => {
+    const loadBatch = () => {
       for (let i = 1; i <= TOTAL_FRAMES; i++) {
         const img = new Image();
         img.src = getFrameUrl(i);
@@ -117,7 +112,7 @@ export function ExplodedViewSection() {
           if (!mounted) return;
           loadedCount++;
           setLoadProgress(Math.min(100, Math.round((loadedCount / TOTAL_FRAMES) * 100)));
-          if (loadedCount >= 20 && !isLoaded) {
+          if (loadedCount >= 20) {
             setIsLoaded(true); // ready for interactive scrubbing early
           }
         };
@@ -137,9 +132,10 @@ export function ExplodedViewSection() {
   // Render current frame to canvas
   useEffect(() => {
     if (mode !== 'canvas') return;
-    const canvas = canvasRef.current;
+    const canvas = /** @type {HTMLCanvasElement | null} */ (canvasRef.current);
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     const img = imagesRef.current[currentFrame];
 
     if (img && img.complete && img.naturalWidth > 0) {
@@ -158,7 +154,7 @@ export function ExplodedViewSection() {
     let lastTime = performance.now();
     const interval = 1000 / (25 * playbackSpeed); // 25 fps base
 
-    const loop = (time) => {
+    const loop = (/** @type {number} */ time) => {
       if (time - lastTime >= interval) {
         lastTime = time;
         setCurrentFrame((prev) => {
@@ -189,12 +185,12 @@ export function ExplodedViewSection() {
 
   const explosionPct = Math.round(((currentFrame - 1) / (TOTAL_FRAMES - 1)) * 100);
 
-  const handleSliderChange = (e) => {
+  const handleSliderChange = (/** @type {React.ChangeEvent<HTMLInputElement>} */ e) => {
     setIsPlaying(false);
     setCurrentFrame(Number(e.target.value));
   };
 
-  const handleQuickExplode = (pct) => {
+  const handleQuickExplode = (/** @type {number} */ pct) => {
     setIsPlaying(false);
     const target = Math.max(1, Math.min(TOTAL_FRAMES, Math.round((pct / 100) * (TOTAL_FRAMES - 1)) + 1));
     setCurrentFrame(target);

@@ -78,7 +78,7 @@ export function Footer({ setCurrentPage }) {
                   onClick={() => setCurrentPage('dashboard')}
                   className="hover:text-brand-cyan transition-colors"
                 >
-                  User Intelligence Dashboard
+                  Viewer Dashboard
                 </button>
               </li>
             </ul>
@@ -94,7 +94,7 @@ export function Footer({ setCurrentPage }) {
               <span className="px-2 py-0.5 rounded bg-dark-900 border border-white/5 text-slate-300">React 18</span>
               <span className="px-2 py-0.5 rounded bg-dark-900 border border-white/5 text-slate-300">Tailwind CSS</span>
               <span className="px-2 py-0.5 rounded bg-dark-900 border border-white/5 text-slate-300">SQLite ORM</span>
-              <span className="px-2 py-0.5 rounded bg-dark-900 border border-white/5 text-slate-300">Leaflet Maps</span>
+              <span className="px-2 py-0.5 rounded bg-dark-900 border border-white/5 text-slate-300">Leaflet + OpenStreetMap</span>
               <span className="px-2 py-0.5 rounded bg-dark-900 border border-white/5 text-slate-300">Framer Motion</span>
               <span className="px-2 py-0.5 rounded bg-dark-900 border border-white/5 text-brand-cyan">AI Recommendation</span>
             </div>

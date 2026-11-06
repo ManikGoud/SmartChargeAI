@@ -1,19 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
-  Play, 
-  Pause, 
   RotateCcw, 
-  Gauge, 
-  BatteryCharging, 
   Navigation, 
   Zap, 
   ShieldCheck, 
   Sliders, 
   Video, 
-  Compass, 
-  Maximize2,
-  ChevronRight,
-  TrendingDown,
   Activity
 } from 'lucide-react';
 import { DemoDataBadge } from './Badge';
@@ -88,17 +80,14 @@ export function DrivingSequencesSection() {
   const [playbackMode, setPlaybackMode] = useState('video'); // 'video' | 'scrub'
   const [isPlaying, setIsPlaying] = useState(true);
   const [scrubFrame, setScrubFrame] = useState(1);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [hudVisible, setHudVisible] = useState(true);
 
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const scrubImagesRef = useRef({});
-  const animFrameRef = useRef(null);
+  const videoRef = useRef(/** @type {HTMLVideoElement | null} */ (null));
+  const canvasRef = useRef(/** @type {HTMLCanvasElement | null} */ (null));
 
   // Restart video when active tab changes with safe autoplay handling
   useEffect(() => {
-    const video = videoRef.current;
+    const video = /** @type {HTMLVideoElement | null} */ (videoRef.current);
     if (video && playbackMode === 'video') {
       video.defaultMuted = true;
       video.muted = true;
@@ -121,9 +110,10 @@ export function DrivingSequencesSection() {
   // Handle Scrub Frame Canvas Rendering
   useEffect(() => {
     if (playbackMode !== 'scrub') return;
-    const canvas = canvasRef.current;
+    const canvas = /** @type {HTMLCanvasElement | null} */ (canvasRef.current);
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
     // Load frame on demand
     const padded = String(scrubFrame).padStart(3, '0');
@@ -138,12 +128,13 @@ export function DrivingSequencesSection() {
   }, [scrubFrame, activeScenario, playbackMode]);
 
   const togglePlay = () => {
-    if (playbackMode === 'video' && videoRef.current) {
-      if (videoRef.current.paused) {
-        videoRef.current.play();
+    const video = /** @type {HTMLVideoElement | null} */ (videoRef.current);
+    if (playbackMode === 'video' && video) {
+      if (video.paused) {
+        video.play();
         setIsPlaying(true);
       } else {
-        videoRef.current.pause();
+        video.pause();
         setIsPlaying(false);
       }
     }
@@ -252,7 +243,9 @@ export function DrivingSequencesSection() {
               muted
               playsInline
               preload="auto"
-              className="w-full h-full object-cover"
+              onClick={togglePlay}
+              title={isPlaying ? 'Click to pause' : 'Click to play'}
+              className="w-full h-full object-cover cursor-pointer"
             />
           ) : (
             /* Mode B: Canvas Frame Scrubber */

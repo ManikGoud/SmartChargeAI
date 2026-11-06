@@ -10,6 +10,15 @@ export const apiClient = axios.create({
   },
 });
 
+// Automatic JWT Bearer Token Injection
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('smartcharge_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => Promise.reject(error));
+
 export const checkBackendHealth = async () => {
   try {
     const res = await apiClient.get('/api/health');
@@ -194,5 +203,147 @@ export const sendChatMessage = async (chatPayload) => {
     return { success: true, data: res.data };
   } catch (error) {
     return { success: false, error: error.message };
+  }
+};
+
+// ==========================================
+// 3-Module RBAC Authentication API Services
+// ==========================================
+
+export const loginUser = async ({ user_id, password, role }) => {
+  try {
+    const res = await apiClient.post('/api/auth/login', {
+      user_id: user_id.trim().toUpperCase(),
+      password,
+      role,
+    });
+    return { success: true, data: res.data };
+  } catch (error) {
+    const msg = error.response?.data?.detail || error.message || 'Login failed';
+    return { success: false, error: msg };
+  }
+};
+
+export const googleLoginUser = async (googlePayload = {}) => {
+  try {
+    const res = await apiClient.post('/api/auth/google', {
+      demo_mode: true,
+      google_name: googlePayload.name || 'Rahul Sharma (Google EV)',
+      google_email: googlePayload.email || 'rahul.ev@gmail.com',
+      id_token: googlePayload.id_token || null,
+    });
+    return { success: true, data: res.data };
+  } catch (error) {
+    const msg = error.response?.data?.detail || error.message || 'Google authentication failed';
+    return { success: false, error: msg };
+  }
+};
+
+export const fetchCurrentUser = async () => {
+  try {
+    const res = await apiClient.get('/api/auth/me');
+    return { success: true, data: res.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.detail || error.message };
+  }
+};
+
+export const fetchDemoAccounts = async () => {
+  try {
+    const res = await apiClient.get('/api/auth/demo-accounts');
+    return { success: true, data: res.data };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+// ==========================================
+// Station Owner API Services
+// ==========================================
+
+export const fetchOwnerStations = async () => {
+  try {
+    const res = await apiClient.get('/api/owner/stations');
+    return { success: true, data: res.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.detail || error.message };
+  }
+};
+
+export const updateOwnerTariff = async (stationId, pricePerKwh, pricingNote) => {
+  try {
+    const res = await apiClient.put(`/api/owner/stations/${stationId}/tariff`, {
+      station_id: stationId,
+      price_per_kwh: parseFloat(pricePerKwh),
+      pricing_note: pricingNote,
+    });
+    return { success: true, data: res.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.detail || error.message };
+  }
+};
+
+export const updateOwnerPortStatus = async (stationId, plugType, available) => {
+  try {
+    const res = await apiClient.put(`/api/owner/stations/${stationId}/ports`, {
+      station_id: stationId,
+      plug_type: plugType,
+      available: parseInt(available, 10),
+    });
+    return { success: true, data: res.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.detail || error.message };
+  }
+};
+
+export const fetchOwnerAnalytics = async () => {
+  try {
+    const res = await apiClient.get('/api/owner/analytics');
+    return { success: true, data: res.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.detail || error.message };
+  }
+};
+
+// ==========================================
+// Platform Administrator API Services
+// ==========================================
+
+export const fetchAdminMetrics = async () => {
+  try {
+    const res = await apiClient.get('/api/admin/metrics');
+    return { success: true, data: res.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.detail || error.message };
+  }
+};
+
+export const fetchAdminUsers = async () => {
+  try {
+    const res = await apiClient.get('/api/admin/users');
+    return { success: true, data: res.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.detail || error.message };
+  }
+};
+
+export const fetchAdminAuditLogs = async (limit = 50) => {
+  try {
+    const res = await apiClient.get('/api/admin/audit-logs', { params: { limit } });
+    return { success: true, data: res.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.detail || error.message };
+  }
+};
+
+export const overrideStationStatus = async (stationId, status) => {
+  try {
+    const res = await apiClient.post(`/api/admin/stations/${stationId}/override`, {
+      station_id: stationId,
+      status,
+    });
+    return { success: true, data: res.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.detail || error.message };
   }
 };

@@ -1,30 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { VehicleProvider } from './context/VehicleContext';
-import { StationProvider, useStations } from './context/StationContext';
-import { Navbar } from './components/Navbar';
-import { Footer } from './components/Footer';
-import { HomePage } from './pages/HomePage';
-import { DiscoveryPage } from './pages/DiscoveryPage';
-import { GaragePage } from './pages/GaragePage';
-import { DashboardPage } from './pages/DashboardPage';
-import { TripPlannerPage } from './pages/TripPlannerPage';
-import { CostComparisonPage } from './pages/CostComparisonPage';
-import { AssistantPage } from './pages/AssistantPage';
+import { StationProvider } from './context/StationContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { LoginPage } from './pages/LoginPage';
+import { CustomerLayout } from './layouts/CustomerLayout';
+import { OwnerLayout } from './layouts/OwnerLayout';
+import { AdminLayout } from './layouts/AdminLayout';
 import { checkBackendHealth } from './services/api';
 
-function AppContent() {
-  const [currentPage, setCurrentPage] = useState('home');
-  const [backendOnline, setBackendOnline] = useState(false);
-  const { setSearchQuery } = useStations();
+function AppRouter() {
+  const { user, role, isAuthenticated, loading } = useAuth();
+  
+  // Initialize route from browser URL bar pathname
+  const [currentPath, setCurrentPath] = useState(() => {
+    if (typeof window !== 'undefined' && window.location.pathname && window.location.pathname !== '/') {
+      return window.location.pathname;
+    }
+    return '/login';
+  });
 
-  // Test backend connectivity on mount and keep polling softly
+  const [backendOnline, setBackendOnline] = useState(false);
+
+  // Soft backend health polling
   useEffect(() => {
     let isMounted = true;
     async function verify() {
       const res = await checkBackendHealth();
-      if (isMounted) {
-        setBackendOnline(res.success);
-      }
+      if (isMounted) setBackendOnline(res.success);
     }
     verify();
     const interval = setInterval(verify, 15000);
@@ -34,78 +36,96 @@ function AppContent() {
     };
   }, []);
 
-  const handleHomeSearch = (query) => {
-    setSearchQuery(query);
-    setCurrentPage('discovery');
-  };
+  // Listen to browser Back/Forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname || '/login');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
-  return (
-    <div className="min-h-screen bg-dark-950 text-slate-100 flex flex-col justify-between selection:bg-brand-cyan/20 selection:text-brand-cyan">
-      {/* Ambient background light orbs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-brand-cyan/10 rounded-full blur-[128px]"></div>
-        <div className="absolute top-1/3 -right-40 w-96 h-96 bg-brand-blue/10 rounded-full blur-[140px]"></div>
+  // Navigation function that updates state and browser URL bar
+  const navigate = useCallback((path) => {
+    if (typeof window !== 'undefined' && window.location.pathname !== path) {
+      window.history.pushState({}, '', path);
+    }
+    setCurrentPath(path);
+  }, []);
+
+  // Route Protection & Role Guard Enforcement
+  useEffect(() => {
+    if (loading) return; // Wait until initial localStorage token read completes
+
+    if (!isAuthenticated) {
+      // Unauthenticated visitor must strictly see the login page
+      if (currentPath !== '/login') {
+        navigate('/login');
+      }
+      return;
+    }
+
+    // Authenticated user checks
+    if (role === 'customer') {
+      // Customer cannot access owner or admin routes
+      if (!currentPath.startsWith('/customer/')) {
+        navigate('/customer/home');
+      }
+    } else if (role === 'station_owner') {
+      // Station Owner cannot access customer or admin routes
+      if (!currentPath.startsWith('/owner/')) {
+        navigate('/owner/dashboard');
+      }
+    } else if (role === 'admin') {
+      // Admin cannot access non-admin routes unless explicitly allowed
+      if (!currentPath.startsWith('/admin/')) {
+        navigate('/admin/dashboard');
+      }
+    }
+  }, [isAuthenticated, role, currentPath, loading, navigate]);
+
+  // Loading spinner during initial auth check
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#070A10] flex items-center justify-center text-slate-400 font-mono text-xs">
+        <div className="flex flex-col items-center space-y-3">
+          <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+          <span>Initializing SmartChargeAI Platform...</span>
+        </div>
       </div>
+    );
+  }
 
-      {/* Persistent Responsive Navbar */}
-      <Navbar 
-        currentPage={currentPage} 
-        setCurrentPage={setCurrentPage} 
-        backendOnline={backendOnline} 
-      />
+  // REQUIREMENT 1: If unauthenticated, the first page MUST be the SmartChargeAI Login Page
+  if (!isAuthenticated || currentPath === '/login') {
+    return <LoginPage onNavigate={navigate} />;
+  }
 
-      {/* Active Page View */}
-      <main className="flex-1 w-full">
-        {currentPage === 'home' && (
-          <HomePage 
-            setCurrentPage={setCurrentPage} 
-            onSearch={handleHomeSearch} 
-          />
-        )}
-        {currentPage === 'discovery' && (
-          <DiscoveryPage 
-            setCurrentPage={setCurrentPage} 
-          />
-        )}
-        {currentPage === 'garage' && (
-          <GaragePage 
-            setCurrentPage={setCurrentPage} 
-          />
-        )}
-        {currentPage === 'dashboard' && (
-          <DashboardPage 
-            setCurrentPage={setCurrentPage} 
-          />
-        )}
-        {currentPage === 'trips' && (
-          <TripPlannerPage 
-            setCurrentPage={setCurrentPage} 
-          />
-        )}
-        {currentPage === 'comparison' && (
-          <CostComparisonPage 
-            setCurrentPage={setCurrentPage} 
-          />
-        )}
-        {currentPage === 'assistant' && (
-          <AssistantPage 
-            setCurrentPage={setCurrentPage} 
-          />
-        )}
-      </main>
+  // REQUIREMENT 2 & 3: Role-Specific Isolated Module Layouts
+  if (role === 'customer') {
+    return <CustomerLayout currentPath={currentPath} onNavigate={navigate} />;
+  }
 
-      {/* Persistent Global Footer */}
-      <Footer setCurrentPage={setCurrentPage} />
-    </div>
-  );
+  if (role === 'station_owner') {
+    return <OwnerLayout currentPath={currentPath} onNavigate={navigate} />;
+  }
+
+  if (role === 'admin') {
+    return <AdminLayout currentPath={currentPath} onNavigate={navigate} />;
+  }
+
+  // Fallback to login
+  return <LoginPage onNavigate={navigate} />;
 }
 
 export default function App() {
   return (
-    <VehicleProvider>
-      <StationProvider>
-        <AppContent />
-      </StationProvider>
-    </VehicleProvider>
+    <AuthProvider>
+      <VehicleProvider>
+        <StationProvider>
+          <AppRouter />
+        </StationProvider>
+      </VehicleProvider>
+    </AuthProvider>
   );
 }

@@ -11,76 +11,44 @@ import {
   Navigation, 
   Cpu, 
   Clock, 
-  Layers, 
-  SlidersHorizontal,
   ChevronRight,
   TrendingDown,
   Compass,
-  Bot,
-  BarChart3,
-  Route,
-  Camera,
-  Image as ImageIcon
+  CheckCircle2,
+  SlidersHorizontal
 } from 'lucide-react';
-import { Badge, DemoDataBadge } from '../components/Badge';
+import { DemoDataBadge } from '../components/Badge';
 import { useVehicle } from '../context/VehicleContext';
 import { CinematicScrollExperience } from '../components/CinematicScrollExperience';
-import { DrivingSequencesSection } from '../components/DrivingSequencesSection';
 import { ExplodedViewSection } from '../components/ExplodedViewSection';
 
+/**
+ * @param {{
+ *   setCurrentPage: (page: string) => void;
+ *   onSearch?: (query: string) => void;
+ * }} props
+ */
 export function HomePage({ setCurrentPage, onSearch }) {
-  const { activeVehicle, currentSoC, usableRangeKm } = useVehicle();
+  const { activeVehicle, currentSoC, updateSoC, usableRangeKm, remainingKwh, energyNeededTo80 } = useVehicle();
   const [query, setQuery] = useState('');
-  const [selectedAssetIdx, setSelectedAssetIdx] = useState(0);
 
-  const visualAssets = [
-    {
-      title: 'High-Power Highway Charging Plaza',
-      subtitle: 'Outer Ring Road (ORR) Gachibowli Corridor',
-      src: '/assets/shot1.png',
-      tag: 'Ultra-Fast Hub',
-      desc: '350 kW liquid-cooled dispensers supporting 800V architectures and high-density throughput.'
-    },
-    {
-      title: 'Dual-Port 240 kW CCS-2 Dispensers',
-      subtitle: 'HITEC City Commercial Charging Zone',
-      src: '/assets/shot2.png',
-      tag: 'CCS-2 Standard',
-      desc: 'Simultaneous dynamic load sharing across multiple active vehicle charging sessions.'
-    },
-    {
-      title: 'Dedicated Rapid Turnaround Bays',
-      subtitle: 'Secunderabad Transport Junction',
-      src: '/assets/shot3.png',
-      tag: 'Highway Corridor',
-      desc: 'Wide-berth bays designed for long-distance commercial and private EV transit.'
-    },
-    {
-      title: 'Fleet Charging & Telematics Monitoring',
-      subtitle: 'Shamshabad RGIA Airport Logistics Plaza',
-      src: '/assets/shot4.png',
-      tag: 'Fleet Telematics',
-      desc: 'SmartChargeAI IoT gateway monitoring real-time grid capacity and transformer load.'
-    },
-    {
-      title: 'Rapid DC Dispenser Interface Unit',
-      subtitle: 'Banjara Hills FastHub',
-      src: '/assets/k1.png',
-      tag: 'Smart UI/UX',
-      desc: 'Direct contactless card, RFID, and automated Plug & Charge vehicle handshakes.'
-    },
-    {
-      title: 'High-Efficiency Overnight Depot',
-      subtitle: 'Kokapet Central Charging Station',
-      src: '/assets/k2.png',
-      tag: 'Green Energy',
-      desc: 'Solar canopy-coupled battery energy storage buffer mitigating peak grid demand.'
-    }
+  const quickFilterPills = [
+    '350 kW Ultra-Fast',
+    'CCS-2 Only',
+    'Available Now',
+    'Outer Ring Road',
+    'Free Parking'
   ];
 
-  const handleSearchSubmit = (e) => {
+  const handleSearchSubmit = (/** @type {React.FormEvent} */ e) => {
     e.preventDefault();
     if (onSearch) onSearch(query);
+    setCurrentPage('discovery');
+  };
+
+  const handleQuickFilterClick = (/** @type {string} */ filterText) => {
+    setQuery(filterText);
+    if (onSearch) onSearch(filterText);
     setCurrentPage('discovery');
   };
 
@@ -122,63 +90,121 @@ export function HomePage({ setCurrentPage, onSearch }) {
   ];
 
   return (
-    <div className="space-y-24 pb-20 overflow-hidden">
-      {/* 4-Chapter Scroll-Driven Cinematic 3D Canvas Background Experience */}
+    <div className="space-y-24 pb-24 overflow-hidden bg-[#050507] text-white">
+      {/* 1. 4-Chapter Scroll-Driven Cinematic 3D Canvas Background Experience (LOCKED & PRESERVED) */}
       <CinematicScrollExperience 
         setCurrentPage={setCurrentPage} 
         onSearch={onSearch} 
       />
 
-      {/* Network Live Metrics Strip (Labeled Demo Values) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="glass-panel-glow rounded-3xl p-6 sm:p-8 relative">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 mb-6 border-b border-white/5 gap-2">
+      {/* 2. Interactive Charging Station Search Bar Section (Monochrome Automotive) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
+        <div className="bg-[#0B0B0E] border border-white/[0.12] rounded-xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
             <div>
-              <h3 className="text-sm font-mono uppercase tracking-wider text-slate-200 font-bold flex items-center space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Active Charging Network Telemetry</span>
+              <span className="text-[10px] font-mono tracking-[0.15em] uppercase text-[#A1A1AA] font-semibold flex items-center space-x-1.5">
+                <Search className="w-3.5 h-3.5 text-[#A1A1AA]" />
+                <span>Infrastructure Directory</span>
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white mt-1 tracking-tight">
+                Locate High-Power Charging Plazas
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">Aggregated real-time metrics across registered high-power charging plazas</p>
             </div>
-            <DemoDataBadge />
+            <div className="text-xs font-mono text-[#A1A1AA] bg-[#121216] border border-white/[0.12] px-3 py-1.5 rounded-md">
+              SYNCHRONIZED VEHICLE: <strong className="text-white">{activeVehicle.make.toUpperCase()} {activeVehicle.model.toUpperCase()} ({activeVehicle.maxChargingSpeed >= 200 ? '800V' : '400V'})</strong>
+            </div>
+          </div>
+
+          <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="relative flex-1 w-full">
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#71717A]" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by area, corridor, highway, or network (e.g. Gachibowli, ORR, Tata Power, 150kW)..."
+                className="w-full pl-12 pr-4 py-3.5 rounded-lg bg-[#050507] border border-white/[0.12] text-white placeholder-[#71717A] text-sm focus:outline-none focus:border-white transition-all font-mono"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-lg bg-white text-[#050507] font-bold font-mono text-xs uppercase tracking-wider hover:bg-zinc-200 transition-all shadow-md shrink-0 flex items-center justify-center space-x-2"
+            >
+              <span>Search Dispensers</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </form>
+
+          {/* Quick Filter Chips */}
+          <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-white/[0.12]">
+            <span className="text-[11px] font-mono text-[#71717A] uppercase tracking-wider mr-2">Quick Filters:</span>
+            {quickFilterPills.map((pill, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleQuickFilterClick(pill)}
+                className="px-3 py-1 rounded-md bg-[#121216] border border-white/[0.12] text-xs font-mono text-[#A1A1AA] hover:text-white hover:bg-[#18181D] hover:border-white/30 transition-all"
+              >
+                {pill}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Simplified Network Live Telemetry Strip (Monochrome Digital Instrument) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-[#0B0B0E] border border-white/[0.12] rounded-xl p-6 sm:p-8 relative">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-5 mb-6 border-b border-white/[0.12] gap-2">
+            <div className="flex items-center space-x-2.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-white inline-block shadow-[0_0_6px_rgba(255,255,255,0.8)]"></span>
+              <h3 className="text-[11px] font-mono uppercase tracking-[0.16em] text-[#A1A1AA] font-bold">
+                Live Network Telemetry · 800V HPC Corridors
+              </h3>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-[9px] font-mono uppercase tracking-widest text-[#A1A1AA] border border-white/[0.12] px-2 py-0.5 rounded bg-[#121216]">
+                Verified Benchmark
+              </span>
+              <DemoDataBadge />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div className="space-y-1">
-              <span className="text-3xl sm:text-4xl font-extrabold font-mono text-white tracking-tight">1,420+</span>
-              <p className="text-xs font-mono text-slate-400 uppercase">Compatible Ports Indexed</p>
-              <span className="text-[10px] text-emerald-400 font-mono">98.4% Uptime Target</span>
+            <div className="space-y-1.5 md:border-r md:border-white/[0.12] md:pr-4">
+              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-white tracking-tight">1,420+</div>
+              <p className="text-[10px] font-mono text-[#A1A1AA] uppercase tracking-widest">Compatible Dispensers</p>
+              <span className="text-[11px] text-[#71717A] font-mono">98.4% Operational Target</span>
             </div>
-            <div className="space-y-1">
-              <span className="text-3xl sm:text-4xl font-extrabold font-mono text-brand-cyan tracking-tight">120 kW</span>
-              <p className="text-xs font-mono text-slate-400 uppercase">Average Fast Charger Power</p>
-              <span className="text-[10px] text-slate-400 font-mono">Up to 350 kW Ultra-Fast</span>
+            <div className="space-y-1.5 md:border-r md:border-white/[0.12] md:pr-4">
+              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-white tracking-tight">350 kW</div>
+              <p className="text-[10px] font-mono text-[#A1A1AA] uppercase tracking-widest">Peak Power Dispenser</p>
+              <span className="text-[11px] text-[#71717A] font-mono">800V Ultra-Fast Capable</span>
             </div>
-            <div className="space-y-1">
-              <span className="text-3xl sm:text-4xl font-extrabold font-mono text-emerald-400 tracking-tight">₹17.20</span>
-              <p className="text-xs font-mono text-slate-400 uppercase">Median Tariff / kWh</p>
-              <span className="text-[10px] text-brand-cyan font-mono">-24% vs Peak Grid Rates</span>
+            <div className="space-y-1.5 md:border-r md:border-white/[0.12] md:pr-4">
+              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-white tracking-tight">₹17.20</div>
+              <p className="text-[10px] font-mono text-[#A1A1AA] uppercase tracking-widest">Median Tariff / kWh</p>
+              <span className="text-[11px] text-[#71717A] font-mono">Off-Peak Highway Average</span>
             </div>
-            <div className="space-y-1">
-              <span className="text-3xl sm:text-4xl font-extrabold font-mono text-purple-400 tracking-tight">4.8 t</span>
-              <p className="text-xs font-mono text-slate-400 uppercase">Simulated CO2 Avoided</p>
-              <span className="text-[10px] text-slate-400 font-mono">Equivalent 140 Trees Planted</span>
+            <div className="space-y-1.5">
+              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-white tracking-tight">99.2%</div>
+              <p className="text-[10px] font-mono text-[#A1A1AA] uppercase tracking-widest">First-Attempt Handshake</p>
+              <span className="text-[11px] text-[#71717A] font-mono">Zero Incompatible Standard</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Main Workflow: Search -> Filter -> Compare -> AI Match -> Plan -> Navigate -> Charge */}
+      {/* 4. Connected 7-Step Charging Workflow (Architectural Pipeline) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center space-y-3 mb-12">
-          <span className="text-xs font-mono text-brand-cyan uppercase tracking-widest font-semibold">
-            The SmartChargeAI Paradigm
+        <div className="text-center space-y-2 mb-10">
+          <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-[0.2em] font-bold block">
+            The SmartChargeAI Pipeline
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Seamless 7-Step Charging Intelligence
+            Architected for Precision EV Journeys.
           </h2>
-          <p className="text-slate-400 max-w-2xl mx-auto text-sm">
-            From the moment your battery drops to the second you unplug, our pipeline automates every decision.
+          <p className="text-zinc-400 max-w-xl mx-auto text-sm">
+            Every charging decision is modeled against vehicle intake curves, grid tariffs, and real-time stall occupancy.
           </p>
         </div>
 
@@ -186,27 +212,134 @@ export function HomePage({ setCurrentPage, onSearch }) {
           {workflowSteps.map((step, idx) => (
             <div 
               key={idx}
-              className="glass-panel p-4 rounded-2xl border border-white/5 hover:border-brand-cyan/40 hover:bg-dark-900 transition-all flex flex-col justify-between group"
+              className="bg-[#0B0B0E] p-4 rounded-lg border border-white/[0.12] hover:border-white/30 hover:bg-[#121216] transition-all flex flex-col justify-between group"
             >
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-mono font-bold text-brand-cyan bg-brand-cyan/10 px-2 py-0.5 rounded-md border border-brand-cyan/20">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-mono font-bold text-[#A1A1AA]">
                     {step.num}
                   </span>
-                  <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-brand-cyan transition-colors" />
+                  <ChevronRight className="w-3.5 h-3.5 text-[#71717A] group-hover:text-white transition-colors" />
                 </div>
-                <h4 className="text-sm font-bold text-white mb-1.5">{step.title}</h4>
-                <p className="text-[11px] text-slate-400 leading-relaxed">{step.desc}</p>
+                <h4 className="text-sm font-bold text-white mb-1 tracking-tight">{step.title}</h4>
+                <p className="text-[11px] text-[#A1A1AA] leading-relaxed">{step.desc}</p>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Core Features Grid */}
+      {/* 5. "My EV" Dedicated Section (Automotive Specification Sheet) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center space-y-3 mb-12">
-          <span className="text-xs font-mono text-brand-cyan uppercase tracking-widest font-semibold">
+        <div className="bg-[#0B0B0E] border border-white/[0.12] rounded-xl p-6 sm:p-10 relative overflow-hidden shadow-2xl">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+            {/* Left: Vehicle Specs & Interactive Planning Slider */}
+            <div className="space-y-6 flex-1 w-full">
+              <div className="flex items-center justify-between">
+                <span className="px-3 py-1 rounded-md text-xs font-mono bg-[#121216] text-[#A1A1AA] border border-white/[0.12] flex items-center space-x-1.5 font-bold">
+                  <Car className="w-3.5 h-3.5 text-[#A1A1AA]" />
+                  <span>Active Vehicle Specification</span>
+                </span>
+                <span className="text-xs font-mono text-[#71717A]">
+                  {activeVehicle.year} Model Year
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                  {activeVehicle.make} {activeVehicle.model}
+                </h3>
+                <p className="text-xs font-mono text-[#A1A1AA] mt-1">
+                  Calibrated Vehicle Specifications • Configured for SmartChargeAI Automated Routing
+                </p>
+              </div>
+
+              {/* Vehicle Specifications Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+                <div className="p-3.5 rounded-lg bg-[#050507] border border-white/[0.12]">
+                  <span className="text-[10px] text-[#71717A] block uppercase tracking-wider">Pack Capacity</span>
+                  <span className="text-base font-bold text-white">{activeVehicle.batteryCapacity} kWh</span>
+                </div>
+                <div className="p-3.5 rounded-lg bg-[#050507] border border-white/[0.12]">
+                  <span className="text-[10px] text-[#71717A] block uppercase tracking-wider">Peak DC Rate</span>
+                  <span className="text-base font-bold text-white">{activeVehicle.maxChargingSpeed} kW</span>
+                </div>
+                <div className="p-3.5 rounded-lg bg-[#050507] border border-white/[0.12]">
+                  <span className="text-[10px] text-[#71717A] block uppercase tracking-wider">Rated Range</span>
+                  <span className="text-base font-bold text-zinc-300">{activeVehicle.rangeKm} km</span>
+                </div>
+                <div className="p-3.5 rounded-lg bg-[#050507] border border-white/[0.12]">
+                  <span className="text-[10px] text-[#71717A] block uppercase tracking-wider">Connectors</span>
+                  <span className="text-xs font-bold text-white truncate block">{activeVehicle.connectors.join(', ')}</span>
+                </div>
+              </div>
+
+              {/* Trip Simulation Battery Level */}
+              <div className="p-4 rounded-lg bg-[#050507] border border-white/[0.12] space-y-3">
+                <div className="flex justify-between items-center text-xs font-mono">
+                  <span className="text-[#A1A1AA] font-bold flex items-center space-x-1.5">
+                    <BatteryCharging className="w-4 h-4 text-[#A1A1AA]" />
+                    <span>Route Planning Battery Simulation:</span>
+                  </span>
+                  <span className="text-white font-bold text-sm">{currentSoC}% ({remainingKwh} kWh)</span>
+                </div>
+
+                <input
+                  type="range"
+                  min="5"
+                  max="100"
+                  value={currentSoC}
+                  onChange={(e) => updateSoC(e.target.value)}
+                  className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
+                />
+
+                <div className="flex justify-between text-[11px] font-mono text-[#A1A1AA]">
+                  <span>Simulated Usable Range: <strong className="text-white font-bold">{usableRangeKm} km</strong></span>
+                  <span>Energy Needed to 80%: <strong className="text-white font-bold">{energyNeededTo80} kWh</strong></span>
+                </div>
+                <p className="text-[10px] font-mono text-[#71717A] italic">
+                  * Note: Adjusting this slider calibrates battery simulation in Trip Planner and Cost Calculator without altering your physical EV state.
+                </p>
+              </div>
+
+              {/* Action Buttons (Solid White Primary & Titanium Outline Secondary) */}
+              <div className="flex items-center space-x-3 pt-2">
+                <button
+                  onClick={() => setCurrentPage('dashboard')}
+                  className="px-5 py-2.5 rounded-lg bg-transparent border border-white/20 hover:border-white/40 text-white font-mono text-xs font-bold transition-all"
+                >
+                  Switch EV in Dashboard →
+                </button>
+                <button
+                  onClick={() => setCurrentPage('garage')}
+                  className="px-5 py-2.5 rounded-lg bg-white text-[#050507] hover:bg-zinc-200 font-mono text-xs font-bold uppercase tracking-wider transition-all"
+                >
+                  Open Full EV Garage →
+                </button>
+              </div>
+            </div>
+
+            {/* Right: Vehicle Chassis Showcase */}
+            <div className="w-full lg:w-96 shrink-0 relative rounded-lg overflow-hidden bg-[#050507] border border-white/[0.08] p-6 flex flex-col items-center justify-center">
+              <img 
+                src={activeVehicle.image || '/assets/batman_be6.png'} 
+                alt={activeVehicle.model}
+                className="w-full h-52 object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.95)]"
+                onError={(e) => { (/** @type {HTMLImageElement} */ (e.currentTarget)).src = '/assets/batman_be6.png'; }}
+              />
+              <div className="w-full pt-3 mt-3 border-t border-white/[0.06] flex items-center justify-between text-xs font-mono text-zinc-400">
+                <span>Color: <strong className="text-white">{activeVehicle.color}</strong></span>
+                <span className="text-zinc-300 font-bold">{activeVehicle.maxChargingSpeed >= 200 ? '800V Architecture' : '400V Architecture'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Core Platform Capabilities Grid (Architectural Cards) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center space-y-2 mb-10">
+          <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-[0.2em] font-bold block">
             Platform Capabilities
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
@@ -220,20 +353,20 @@ export function HomePage({ setCurrentPage, onSearch }) {
             return (
               <div 
                 key={i} 
-                className="glass-panel rounded-3xl p-8 border border-white/5 hover:border-brand-cyan/30 transition-all relative overflow-hidden group"
+                className="bg-[#0B0B0E] rounded-xl p-8 border border-white/[0.12] hover:border-white/30 transition-all relative overflow-hidden group"
               >
                 <div className="flex items-start justify-between mb-6">
-                  <div className="w-12 h-12 rounded-2xl bg-brand-cyan/10 border border-brand-cyan/20 flex items-center justify-center text-brand-cyan group-hover:scale-110 transition-transform">
+                  <div className="w-12 h-12 rounded-lg bg-[#121216] border border-white/[0.12] flex items-center justify-center text-white group-hover:scale-105 transition-transform">
                     <Icon className="w-6 h-6" />
                   </div>
-                  <span className="text-xs font-mono text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+                  <span className="text-xs font-mono text-[#A1A1AA] bg-[#121216] px-2.5 py-1 rounded border border-white/[0.12]">
                     {feat.tag}
                   </span>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-brand-cyan transition-colors">
+                <h3 className="text-xl font-bold text-white mb-2 tracking-tight">
                   {feat.title}
                 </h3>
-                <p className="text-sm text-slate-400 leading-relaxed">
+                <p className="text-sm text-zinc-400 leading-relaxed">
                   {feat.desc}
                 </p>
               </div>
@@ -242,139 +375,8 @@ export function HomePage({ setCurrentPage, onSearch }) {
         </div>
       </section>
 
-      {/* Cinematic Driving Sequences Cinema & Scrubber (take 1.mp4, take 2.mp4, take 3.mp4) */}
-      <DrivingSequencesSection />
-
-      {/* Interactive 3D Exploded Powertrain & Architecture (flow.mp4 & flowframe) */}
+      {/* 7. Original Exploded Powertrain & Flow Animation (Interactive 3D Architectural Exploder) */}
       <ExplodedViewSection />
-
-      {/* Infrastructure Visual Asset Gallery */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="glass-panel rounded-3xl border border-white/10 p-6 sm:p-8 relative">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 mb-6 border-b border-white/10 gap-2">
-            <div>
-              <div className="inline-flex items-center space-x-2 text-xs font-mono text-brand-cyan mb-1">
-                <Camera className="w-3.5 h-3.5" />
-                <span>Verified Plaza Infrastructure Showcase</span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-extrabold text-white">
-                Indexed High-Power Charging Plaza Network
-              </h3>
-            </div>
-            <div className="text-xs font-mono text-slate-400">
-              Asset {selectedAssetIdx + 1} of {visualAssets.length}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-            {/* Main Showcase Image Display */}
-            <div className="lg:col-span-8 relative rounded-2xl overflow-hidden border border-white/10 bg-dark-950 aspect-video group">
-              <img 
-                src={visualAssets[selectedAssetIdx].src} 
-                alt={visualAssets[selectedAssetIdx].title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-              />
-              <div className="absolute top-3 left-3 px-3 py-1 rounded-lg bg-dark-950/80 backdrop-blur-md border border-white/10 text-xs font-mono text-brand-cyan font-bold">
-                {visualAssets[selectedAssetIdx].tag}
-              </div>
-              <div className="absolute bottom-3 left-3 right-3 p-3 rounded-xl bg-dark-950/85 backdrop-blur-md border border-white/10">
-                <h4 className="text-sm font-bold text-white">{visualAssets[selectedAssetIdx].title}</h4>
-                <p className="text-xs text-slate-400 mt-0.5">{visualAssets[selectedAssetIdx].subtitle}</p>
-              </div>
-            </div>
-
-            {/* Thumbnail Navigation */}
-            <div className="lg:col-span-4 space-y-2">
-              <span className="text-xs font-mono uppercase tracking-wider text-slate-400 block mb-2">
-                Select Charging Hub View:
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2">
-                {visualAssets.map((asset, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedAssetIdx(idx)}
-                    className={`flex items-center space-x-3 p-2 rounded-xl text-left border transition-all ${
-                      selectedAssetIdx === idx
-                        ? 'bg-brand-cyan/15 border-brand-cyan text-brand-cyan shadow-cyan-glow'
-                        : 'bg-dark-950/60 border-white/5 text-slate-400 hover:text-white hover:border-white/20'
-                    }`}
-                  >
-                    <img 
-                      src={asset.src} 
-                      alt="" 
-                      className="w-12 h-10 object-cover rounded-lg shrink-0 border border-white/10"
-                    />
-                    <div className="min-w-0">
-                      <div className="text-xs font-bold truncate text-white">{asset.title.split(' ')[0]} {asset.title.split(' ')[1]}</div>
-                      <div className="text-[10px] text-slate-400 truncate">{asset.tag}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Cinematic Showcase: EV Charging Telemetry in Focus */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="glass-panel rounded-3xl border border-white/10 p-8 sm:p-12 relative overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            {/* Visual Asset Spotlight */}
-            <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-dark-950 shadow-2xl group">
-              <img 
-                src="/assets/batman_be6.png" 
-                alt="SmartChargeAI Connected Vehicle"
-                className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700"
-              />
-              <div className="absolute top-3 left-3 px-3 py-1 rounded-lg bg-dark-900/80 backdrop-blur-md border border-white/10 text-xs font-mono text-slate-300">
-                Connected Vehicle HUD • 800V Architecture
-              </div>
-              <div className="absolute bottom-3 right-3 px-3 py-1 rounded-lg bg-emerald-500/20 backdrop-blur-md border border-emerald-500/30 text-xs font-mono text-emerald-400 font-bold">
-                BMS Synchronized
-              </div>
-            </div>
-
-            {/* Explanation & Action */}
-            <div className="space-y-6">
-              <span className="text-xs font-mono text-brand-cyan uppercase tracking-widest font-semibold">
-                Vehicle-to-Cloud Integration
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                Not a Car Ad. A Groundbreaking Charging Operating System.
-              </h3>
-              <p className="text-sm text-slate-300 leading-relaxed">
-                SmartChargeAI is focused entirely on post-purchase EV ownership excellence. By knowing the precise battery chemistry, connector standard, and thermal charging curve of your vehicle, we shield you from broken chargers, slow AC sockets, and surge prices.
-              </p>
-
-              <div className="space-y-3 font-mono text-xs">
-                <div className="flex items-center space-x-3 text-slate-300">
-                  <span className="w-5 h-5 rounded-full bg-brand-cyan/20 text-brand-cyan flex items-center justify-center font-bold">✓</span>
-                  <span>Eliminates connector mismatch anxiety (CCS2 vs CHAdeMO vs Type 2)</span>
-                </div>
-                <div className="flex items-center space-x-3 text-slate-300">
-                  <span className="w-5 h-5 rounded-full bg-brand-cyan/20 text-brand-cyan flex items-center justify-center font-bold">✓</span>
-                  <span>Avoids charging above 80% when CC-CV saturation slows throughput</span>
-                </div>
-                <div className="flex items-center space-x-3 text-slate-300">
-                  <span className="w-5 h-5 rounded-full bg-brand-cyan/20 text-brand-cyan flex items-center justify-center font-bold">✓</span>
-                  <span>Recommends alternate stations when waiting queues exceed 15 mins</span>
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  onClick={() => setCurrentPage('discovery')}
-                  className="px-6 py-3 rounded-xl bg-brand-cyan text-dark-950 font-bold hover:bg-brand-cyan/90 transition-all text-xs font-mono uppercase tracking-wider shadow-cyan-glow"
-                >
-                  Start Charging Session Discovery →
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
-

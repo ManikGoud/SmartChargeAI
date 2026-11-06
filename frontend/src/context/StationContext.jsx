@@ -3,7 +3,7 @@ import { SAMPLE_STATIONS } from '../data/sampleData';
 import { useVehicle } from './VehicleContext';
 import { fetchStations } from '../services/api';
 
-const StationContext = createContext();
+const StationContext = createContext(null);
 
 const LOCAL_STORAGE_KEY_BOOKMARKS = 'smartcharge_bookmarked_stations';
 
@@ -28,6 +28,8 @@ export function StationProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isBackendSynced, setIsBackendSynced] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('syncing'); // 'syncing' | 'synced' | 'offline'
+  const [backendStationCount, setBackendStationCount] = useState(0);
   const [selectedStation, setSelectedStation] = useState(null);
 
   // User location (defaults to Hyderabad HITEC City coordinates)
@@ -64,6 +66,7 @@ export function StationProvider({ children }) {
 
   // Load from FastAPI backend
   const loadStationsFromBackend = async () => {
+    setSyncStatus('syncing');
     setLoading(true);
     setError(null);
     const res = await fetchStations();
@@ -75,13 +78,19 @@ export function StationProvider({ children }) {
       }));
       setStations(withDistance);
       setIsBackendSynced(true);
+      setSyncStatus('synced');
+      setBackendStationCount(res.data.length);
+      setError(null);
     } else {
-      console.info('Using local verified demo stations dataset');
+      console.info('Preserving local verified demo stations dataset');
       const withDistance = SAMPLE_STATIONS.map(s => ({
         ...s,
         distanceKm: s.distanceKm || getHaversineDistance(userLocation.lat, userLocation.lng, s.lat, s.lng)
       }));
       setStations(withDistance);
+      setIsBackendSynced(false);
+      setSyncStatus('offline');
+      setBackendStationCount(0);
       if (res.error) setError(res.error);
     }
     setLoading(false);
@@ -151,6 +160,8 @@ export function StationProvider({ children }) {
         loading,
         error,
         isBackendSynced,
+        syncStatus,
+        backendStationCount,
         refreshStations: loadStationsFromBackend,
         selectedStation,
         setSelectedStation,
